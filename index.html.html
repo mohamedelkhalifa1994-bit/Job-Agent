@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Intelligence Agent — Mohamed Elkhalifa</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#1a1a2e;font-size:15px;line-height:1.6}
+.app{max-width:960px;margin:0 auto;padding:24px 16px}
+
+.header{background:#0F3460;color:#fff;border-radius:12px;padding:22px 28px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.header h1{font-size:20px;font-weight:600}
+.header p{font-size:13px;color:#BBDDFF;margin-top:3px}
+.run-btn{background:#fff;color:#0F3460;border:none;padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.run-btn:hover{background:#e8f0fe}
+.run-btn:disabled{background:#aaa;color:#eee;cursor:not-allowed}
+
+/* Provider selector */
+.provider-bar{background:#fff;border-radius:12px;border:1px solid #e0e7ef;padding:20px 24px;margin-bottom:16px}
+.provider-bar h3{font-size:15px;font-weight:600;color:#0F3460;margin-bottom:12px}
+.provider-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:580px){.provider-cards{grid-template-columns:1fr}}
+.pcard{border:2px solid #e0e7ef;border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .15s;position:relative}
+.pcard:hover{border-color:#0F3460}
+.pcard.selected{border-color:#0F3460;background:#EAF1F8}
+.pcard-name{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:3px}
+.pcard-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;margin-bottom:6px}
+.tag-free{background:#e1f5ee;color:#0a6644}
+.tag-paid{background:#fef3e2;color:#92560a}
+.pcard-desc{font-size:11px;color:#777;line-height:1.5}
+.pcard .checkmark{position:absolute;top:10px;right:10px;width:18px;height:18px;background:#0F3460;border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.pcard.selected .checkmark{display:flex}
+
+.key-field{margin-bottom:12px}
+.key-field label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.key-field input{width:100%;padding:9px 12px;border:1px solid #dde3ec;border-radius:7px;font-size:13px;font-family:monospace;background:#fafbfd;color:#1a1a2e}
+.key-field input:focus{outline:none;border-color:#0F3460;background:#fff}
+.key-hint{font-size:12px;color:#666;margin-top:5px;line-height:1.5;background:#f8fafc;border-radius:6px;padding:8px 10px;border-left:3px solid #0F3460}
+.key-hint a{color:#0F3460;font-weight:600}
+.key-hint ol{margin-left:16px;margin-top:4px}
+.key-hint li{margin-bottom:2px}
+
+.status-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px}
+.sdot{width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0}
+.sdot.ok{background:#1D9E75}
+.sdot.warn{background:#EF9F27}
+
+.serp-row{border-top:1px solid #f0f4f8;padding-top:14px;margin-top:14px}
+.serp-row h4{font-size:13px;font-weight:600;color:#555;margin-bottom:8px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+@media(max-width:580px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#fff;border-radius:10px;border:1px solid #e0e7ef;padding:13px 15px}
+.stat-label{font-size:11px;color:#888;margin-bottom:3px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.stat-val{font-size:24px;font-weight:600;color:#0F3460}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:2px solid #e0e7ef;margin-bottom:14px}
+.tab{padding:8px 20px;font-size:14px;font-weight:500;cursor:pointer;color:#888;border-bottom:2.5px solid transparent;margin-bottom:-2px}
+.tab.active{color:#0F3460;border-bottom-color:#0F3460}
+
+/* Filters */
+.filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.filters input{flex:1;min-width:160px;padding:8px 12px;border:1px solid #dde3ec;border-radius:7px;font-size:13px;background:#fff}
+.filters select{padding:8px 10px;border:1px solid #dde3ec;border-radius:7px;font-size:13px;background:#fff;color:#1a1a2e}
+
+/* Progress */
+.progress-box{background:#fff;border-radius:10px;border:1px solid #e0e7ef;padding:16px 20px;margin-bottom:14px}
+.progress-box h4{font-size:14px;font-weight:600;margin-bottom:10px;color:#0F3460}
+.prog-step{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px;color:#aaa}
+.prog-step.done{color:#1a1a2e}
+.prog-step.active{color:#0F3460;font-weight:500}
+.pdot{width:10px;height:10px;border-radius:50%;background:#e0e7ef;flex-shrink:0}
+.pdot.done{background:#1D9E75}
+.pdot.active{background:#0F3460;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Job cards */
+.jobs{display:flex;flex-direction:column;gap:10px}
+.job-card{background:#fff;border-radius:10px;border:1px solid #e0e7ef;overflow:hidden}
+.job-card.expanded{border-color:#0F3460}
+.job-head{padding:15px 18px;cursor:pointer;display:flex;align-items:flex-start;gap:14px}
+.job-head:hover{background:#fafbfd}
+.job-info{flex:1;min-width:0}
+.job-title{font-size:15px;font-weight:600;color:#1a1a2e}
+.job-co{font-size:13px;color:#555;margin-top:2px}
+.job-badges{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.badge-high{background:#e1f5ee;color:#0a6644}
+.badge-med{background:#fef3e2;color:#92560a}
+.badge-ai{background:#EEEDFE;color:#3C3489}
+.badge-bdr{background:#E6F1FB;color:#0C447C}
+.badge-new{background:#f0f4ff;color:#3b5bdb}
+.badge-reviewed{background:#fff3cd;color:#856404}
+.badge-applied{background:#d4edda;color:#155724}
+.badge-gray{background:#f0f0f0;color:#555}
+.score-ring{width:48px;height:48px;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.score-ring svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.score-num{font-size:13px;font-weight:700;position:relative;z-index:1}
+
+.job-body{display:none;padding:0 18px 18px;border-top:1px solid #f0f4f8}
+.job-card.expanded .job-body{display:block}
+.sec-label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px}
+.sec-text{font-size:13px;color:#555;line-height:1.65}
+.contacts-grid{display:flex;gap:8px;flex-wrap:wrap}
+.ccard{background:#f8fafc;border:1px solid #e0e7ef;border-radius:8px;padding:10px 12px;font-size:12px;min-width:150px}
+.ccard strong{display:block;font-size:13px;color:#1a1a2e;margin-bottom:2px}
+.ccard span{color:#666}
+.ccard a{color:#0F3460;text-decoration:none;font-size:11px;display:block;margin-top:3px}
+.onav-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.onav{font-size:12px;padding:5px 12px;border-radius:20px;cursor:pointer;border:1px solid #dde3ec;color:#666;background:#fff;font-weight:500}
+.onav.active{background:#0F3460;color:#fff;border-color:#0F3460}
+.outreach-box{background:#f8fafc;border:1px solid #e0e7ef;border-radius:8px;padding:14px;font-size:13px;line-height:1.75;color:#1a1a2e;white-space:pre-wrap;min-height:90px}
+.action-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.abtn{padding:7px 14px;font-size:12px;border-radius:7px;border:1px solid #dde3ec;cursor:pointer;background:#fff;color:#555;font-weight:500}
+.abtn:hover{background:#f0f4f8}
+.abtn.primary{background:#0F3460;color:#fff;border-color:#0F3460}
+.abtn.primary:hover{background:#0a2544}
+.abtn.success{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.status-sel{padding:6px 10px;font-size:12px;border-radius:7px;border:1px solid #dde3ec;background:#fff;color:#555;cursor:pointer}
+
+.empty{text-align:center;padding:44px 20px;color:#888;font-size:14px;background:#fff;border-radius:10px;border:1px solid #e0e7ef}
+.empty h3{font-size:16px;font-weight:600;color:#444;margin-bottom:8px}
+.export-bar{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.toast{position:fixed;bottom:20px;right:20px;background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;display:none;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.error-box{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:14px 16px;font-size:13px;color:#5d4037;margin-bottom:14px;display:none;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.error-box strong{display:block;margin-bottom:6px;font-size:14px;color:#3e2723}
+.error-dismiss{float:right;cursor:pointer;font-size:16px;color:#888;margin-left:8px;line-height:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div>
+      <h1>&#128188; Job Intelligence Agent</h1>
+      <p>Daily job search, scoring &amp; outreach generator — Mohamed Elkhalifa</p>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="runAgent()" disabled>&#9654; Run Agent Now</button>
+  </div>
+
+  <!-- ERROR BOX -->
+  <div class="error-box" id="errorBox">
+    <span class="error-dismiss" onclick="this.parentElement.style.display='none'">&#10005;</span>
+    <strong id="errorTitle">Error</strong>
+    <span id="errorMsg"></span>
+  </div>
+
+  <!-- PROVIDER SETUP -->
+  <div class="provider-bar">
+    <h3>&#128273; Step 1 — Choose your free AI provider</h3>
+    <div class="provider-cards">
+
+      <div class="pcard selected" id="pc-gemini" onclick="selectProvider('gemini')">
+        <div class="checkmark">&#10003;</div>
+        <div class="pcard-name">Google Gemini</div>
+        <span class="pcard-tag tag-free">FREE — Recommended</span>
+        <div class="pcard-desc">1,500 free requests/day. No credit card. Works with your Google account.</div>
+      </div>
+
+      <div class="pcard" id="pc-groq" onclick="selectProvider('groq')">
+        <div class="checkmark">&#10003;</div>
+        <div class="pcard-name">Groq</div>
+        <span class="pcard-tag tag-free">FREE — Very fast</span>
+        <div class="pcard-desc">Generous free tier, ultra-fast responses. Runs open-source Llama model.</div>
+      </div>
+
+      <div class="pcard" id="pc-anthropic" onclick="selectProvider('anthropic')">
+        <div class="checkmark">&#10003;</div>
+        <div class="pcard-name">Anthropic Claude</div>
+        <span class="pcard-tag tag-paid">PAID — ~$0.03/run</span>
+        <div class="pcard-desc">Best quality results. Requires billing. Use if you add credits later.</div>
+      </div>
+
+    </div>
+
+    <!-- Dynamic key field -->
+    <div id="keySection"></div>
+
+    <!-- SerpApi optional -->
+    <div class="serp-row">
+      <h4>&#128270; Step 2 — SerpApi key (optional — for live job search)</h4>
+      <div class="key-field">
+        <input type="password" id="serpKey" placeholder="SerpApi key — optional..." oninput="checkReady()">
+      </div>
+      <div class="key-hint">
+        Without this, the agent uses AI knowledge for realistic job research. With it, it pulls live results from Google Jobs &amp; Indeed.<br>
+        Get 100 free searches/month at <a href="https://serpapi.com" target="_blank">serpapi.com</a> — no credit card needed.
+      </div>
+    </div>
+
+    <div class="status-row" id="statusRow">
+      <span class="sdot" id="keyDot"></span>
+      <span id="keyStatus" style="color:#888;font-size:13px">Enter your API key above to continue</span>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Jobs found</div><div class="stat-val" id="s1">0</div></div>
+    <div class="stat"><div class="stat-label">High match 80+</div><div class="stat-val" id="s2" style="color:#1D9E75">0</div></div>
+    <div class="stat"><div class="stat-label">Medium 60–79</div><div class="stat-val" id="s3" style="color:#EF9F27">0</div></div>
+    <div class="stat"><div class="stat-label">Ready to send</div><div class="stat-val" id="s4" style="color:#0F3460">0</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('ai',this)">AI &amp; Transformation</div>
+    <div class="tab" onclick="switchTab('bdr',this)">BDR / SDR</div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <input type="text" id="filterText" placeholder="Filter by title or company..." oninput="renderJobs()">
+    <select id="filterScore" onchange="renderJobs()">
+      <option value="all">All matches</option>
+      <option value="high">High match only (80+)</option>
+      <option value="med">Medium only (60–79)</option>
+    </select>
+    <select id="filterStatus" onchange="renderJobs()">
+      <option value="all">All statuses</option>
+      <option value="New">New</option>
+      <option value="Reviewed">Reviewed</option>
+      <option value="Applied">Applied</option>
+    </select>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-box" id="progBox" style="display:none">
+    <h4>&#128269; Agent running...</h4>
+    <div class="prog-step" id="ps1"><span class="pdot" id="pd1"></span> Searching for remote US jobs posted in last 24h...</div>
+    <div class="prog-step" id="ps2"><span class="pdot" id="pd2"></span> Scoring each job against your profile...</div>
+    <div class="prog-step" id="ps3"><span class="pdot" id="pd3"></span> Researching company contacts and decision makers...</div>
+    <div class="prog-step" id="ps4"><span class="pdot" id="pd4"></span> Generating personalised email, LinkedIn &amp; follow-up messages...</div>
+    <div class="prog-step" id="ps5"><span class="pdot" id="pd5"></span> Finalising your job pipeline...</div>
+  </div>
+
+  <!-- JOB LIST -->
+  <div class="jobs" id="jobsList">
+    <div class="empty">
+      <h3>&#128188; Your job pipeline will appear here</h3>
+      <p>Choose a free AI provider above, paste your API key, then click <strong>Run Agent Now</strong>.</p>
+    </div>
+  </div>
+
+  <div class="export-bar" id="exportBar" style="display:none">
+    <button class="abtn" onclick="exportCSV()">&#11123; Export CSV for Google Sheets</button>
+    <button class="abtn primary" onclick="sheetsGuide()">How to import into Google Sheets</button>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CANDIDATE = `Mohamed Elkhalifa — Sales & GTM professional, Founder of Axieonex (AI-orchestrated outbound sales engines).
+Skills: HubSpot, Salesforce, GoHighLevel, Apollo.io, ICP profiling, pipeline management, outbound automation, LinkedIn Sales Navigator.
+Languages: Arabic (native), English C1, German C1 — 6 years working in Germany.
+Result: 16%+ conversion rate targeting senior decision-makers at European companies (revenue >€25M).
+NOT a software engineer. Avoid deep coding, ML engineering, PhD-required roles.
+Open to: remote globally, relocation.`;
+
+let provider = 'gemini';
+let jobs = {ai:[], bdr:[]};
+let currentTab = 'ai';
+let expandedId = null;
+let activeOut = {};
+
+const PROVIDERS = {
+  gemini: {
+    name: 'Google Gemini',
+    placeholder: 'AIzaSy...',
+    hint: `<ol>
+      <li>Go to <a href="https://aistudio.google.com" target="_blank"><strong>aistudio.google.com</strong></a></li>
+      <li>Sign in with your Google account (free)</li>
+      <li>Click <strong>"Get API Key"</strong> in the top menu</li>
+      <li>Click <strong>"Create API key"</strong></li>
+      <li>Copy the key and paste it above</li>
+    </ol>
+    No credit card needed. 1,500 free requests per day.`,
+    label: 'Google Gemini API Key'
+  },
+  groq: {
+    name: 'Groq',
+    placeholder: 'gsk_...',
+    hint: `<ol>
+      <li>Go to <a href="https://console.groq.com" target="_blank"><strong>console.groq.com</strong></a></li>
+      <li>Click <strong>Sign Up</strong> — use Google or email (free)</li>
+      <li>Once logged in, click <strong>"API Keys"</strong> in the left menu</li>
+      <li>Click <strong>"Create API Key"</strong>, name it "Job Agent"</li>
+      <li>Copy the key and paste it above</li>
+    </ol>
+    No credit card needed. Very generous free tier.`,
+    label: 'Groq API Key'
+  },
+  anthropic: {
+    name: 'Anthropic Claude',
+    placeholder: 'sk-ant-api03-...',
+    hint: `<ol>
+      <li>Go to <a href="https://console.anthropic.com" target="_blank"><strong>console.anthropic.com</strong></a></li>
+      <li>Sign up and add billing (minimum $5 credit)</li>
+      <li>Click <strong>"API Keys"</strong> → <strong>"Create Key"</strong></li>
+      <li>Copy the key and paste it above</li>
+    </ol>
+    Each run costs approximately $0.02–0.04.`,
+    label: 'Anthropic API Key'
+  }
+};
+
+function selectProvider(p) {
+  provider = p;
+  document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('pc-'+p).classList.add('selected');
+  renderKeySection();
+  checkReady();
+}
+
+function renderKeySection() {
+  const cfg = PROVIDERS[provider];
+  document.getElementById('keySection').innerHTML = `
+    <div class="key-field" style="margin-bottom:10px">
+      <label>${cfg.label} <span style="color:#E24B4A;font-weight:700">*required</span></label>
+      <input type="password" id="apiKey" placeholder="${cfg.placeholder}" oninput="checkReady()" autocomplete="off">
+    </div>
+    <div class="key-hint">${cfg.hint}</div>`;
+}
+
+function checkReady() {
+  const k = (document.getElementById('apiKey')||{}).value||'';
+  const dot = document.getElementById('keyDot');
+  const status = document.getElementById('keyStatus');
+  const btn = document.getElementById('runBtn');
+  if(k.length > 10) {
+    dot.className = 'sdot ok';
+    status.style.color = '#1D9E75';
+    status.textContent = PROVIDERS[provider].name + ' key entered — ready to run!';
+    btn.disabled = false;
+  } else {
+    dot.className = 'sdot';
+    status.style.color = '#888';
+    status.textContent = 'Enter your API key above to continue';
+    btn.disabled = true;
+  }
+}
+
+async function callLLM(prompt) {
+  const key = document.getElementById('apiKey').value.trim();
+
+  if(provider === 'gemini') {
+    let res, d;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+        {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            contents:[{parts:[{text:prompt}]}],
+            generationConfig:{temperature:0.4, maxOutputTokens:6000}
+          })
+        }
+      );
+    } catch(networkErr) {
+      throw new Error('Network error — could not reach Gemini. Check your internet connection and try again.');
+    }
+    try { d = await res.json(); } catch(e) { throw new Error('Gemini returned unreadable response (status '+res.status+'). Try again.'); }
+    if(!res.ok) {
+      const msg = d?.error?.message || 'Gemini error (status '+res.status+')';
+      if(res.status===400) throw new Error('Bad request to Gemini. Try again or switch to Groq.');
+      if(res.status===401||res.status===403||msg.toLowerCase().includes('api key')) throw new Error('Gemini API key rejected. Go to aistudio.google.com → API Keys and create a fresh key.');
+      if(res.status===429||msg.toLowerCase().includes('quota')) throw new Error('Gemini rate limit hit. Wait 1 minute and try again — free tier allows 15 requests/minute.');
+      throw new Error('Gemini error: ' + msg);
+    }
+    const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!text) {
+      const reason = d?.candidates?.[0]?.finishReason || 'unknown';
+      throw new Error('Gemini returned empty content (reason: '+reason+'). Try running again.');
+    }
+    return text;
+  }
+
+  if(provider === 'groq') {
+    let res, d;
+    try {
+      res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+        body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],max_tokens:5000,temperature:0.4})
+      });
+    } catch(e) { throw new Error('Network error reaching Groq. Check your internet and try again.'); }
+    try { d = await res.json(); } catch(e) { throw new Error('Groq returned unreadable response. Try again.'); }
+    if(!res.ok) {
+      const msg = d?.error?.message||'Groq error';
+      if(res.status===401) throw new Error('Groq API key rejected. Check you copied it correctly from console.groq.com.');
+      if(res.status===429) throw new Error('Groq rate limit. Wait 30 seconds and try again.');
+      throw new Error('Groq error: '+msg);
+    }
+    return d.choices?.[0]?.message?.content || '';
+  }
+
+  if(provider === 'anthropic') {
+    let res, d;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:5000,messages:[{role:'user',content:prompt}]})
+      });
+    } catch(e) { throw new Error('Network error reaching Anthropic. Check your internet and try again.'); }
+    try { d = await res.json(); } catch(e) { throw new Error('Anthropic returned unreadable response. Try again.'); }
+    if(!res.ok) {
+      const msg = d?.error?.message||'Anthropic error';
+      if(res.status===401) throw new Error('Anthropic API key rejected. Check your key at console.anthropic.com.');
+      if(res.status===529||msg.toLowerCase().includes('credit')) throw new Error('Anthropic credits empty. Switch to Gemini or Groq — both are free.');
+      throw new Error('Anthropic error: '+msg);
+    }
+    return d.content?.map(b=>b.text||'').join('') || '';
+  }
+
+  throw new Error('No provider selected. Please choose Gemini, Groq or Anthropic above.');
+}
+
+async function searchJobs() {
+  const serpKey = document.getElementById('serpKey').value.trim();
+  if(!serpKey) return null;
+  try {
+    const queries = ['AI automation business remote','GTM RevOps sales operations remote','BDR SDR DACH German remote USA'];
+    const q = queries[Math.floor(Math.random()*queries.length)];
+    const url = `https://serpapi.com/search.json?engine=google_jobs&q=${encodeURIComponent(q)}&location=United+States&chips=date_posted:today&api_key=${serpKey}`;
+    const r = await fetch(url);
+    const d = await r.json();
+    return d.jobs_results?.slice(0,6) || null;
+  } catch(e){return null;}
+}
+
+function pdot(n,s){
+  const d=document.getElementById('pd'+n);
+  const p=document.getElementById('ps'+n);
+  if(d){d.className='pdot '+s;}
+  if(p){p.className='prog-step '+s;}
+}
+
+function showError(title, msg) {
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMsg').textContent = ' ' + msg;
+  const box = document.getElementById('errorBox');
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth', block:'nearest'});
+  // Don't auto-hide errors — user needs to read them
+}
+
+async function runAgent() {
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('progBox').style.display = 'block';
+  document.getElementById('exportBar').style.display = 'none';
+  for(let i=1;i<=5;i++) pdot(i,'');
+
+  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  try {
+    pdot(1,'active');
+    const live = await searchJobs();
+    await sleep(700);
+    pdot(1,'done'); pdot(2,'active');
+    await sleep(500);
+    pdot(2,'done'); pdot(3,'active');
+    await sleep(500);
+    pdot(3,'done'); pdot(4,'active');
+
+    const liveCtx = live?.length
+      ? `LIVE job search results to use as inspiration (real companies, real postings):\n${JSON.stringify(live.slice(0,4),null,1)}\n\n`
+      : '';
+
+    const prompt = `Generate 6 remote US job listings for this job seeker. Return ONLY a JSON array, nothing else.
+
+Job seeker: Mohamed Elkhalifa. Skills: B2B sales, GTM strategy, AI workflow automation, HubSpot, GoHighLevel, Apollo.io, ICP profiling. Languages: Arabic, English, German (C1, 6 years in Germany). Founded Axieonex (AI outbound sales systems). 16%+ conversion rate. NOT an engineer.
+
+Today: ${today}
+
+Return this exact JSON structure with 6 items (4 with category "ai", 2 with category "bdr"):
+
+[{"id":"j1","category":"ai","title":"...","company":"...","companySize":"...","link":"https://...","date":"${today}","score":85,"status":"New","summary":"...","matchReason":"...","whyApply":"...","contacts":[{"name":"...","role":"...","linkedin":"https://linkedin.com/in/...","email":"..."}],"outreach":{"email":"Subject: ...\\n\\nHi [Name],\\n\\n[body]\\n\\nBest,\\nMohamed","linkedin":"[max 280 chars]","followup1":"Subject: ...\\n\\nHi [Name],\\n\\n[body]\\n\\nBest,\\nMohamed","followup2":"Subject: ...\\n\\nHi [Name],\\n\\n[body]\\n\\nBest,\\nMohamed"}}]
+
+Rules: all remote USA, scores 65-95, realistic SaaS companies, outreach personalised to each company, email 4-5 sentences referencing Axieonex or his experience. Start response with [ and end with ]. No other text.`;
+
+    let raw = '';
+    try { raw = await callLLM(prompt); } 
+    catch(e) { throw e; }
+
+    pdot(4,'done'); pdot(5,'active');
+    await sleep(300);
+
+    let parsed;
+    try {
+      let clean = raw.trim();
+      // Remove any markdown fences
+      clean = clean.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/\s*```$/,'').trim();
+      // Find the JSON array boundaries
+      const start = clean.indexOf('[');
+      const end = clean.lastIndexOf(']');
+      if(start === -1 || end === -1 || end <= start) {
+        throw new Error('NO_ARRAY: Response did not contain a JSON array. First 200 chars: ' + clean.slice(0,200));
+      }
+      const jsonStr = clean.slice(start, end+1);
+      try {
+        parsed = JSON.parse(jsonStr);
+      } catch(je) {
+        throw new Error('PARSE_FAIL: ' + je.message + ' | JSON start: ' + jsonStr.slice(0,150));
+      }
+      if(!Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error('EMPTY_ARRAY: Parsed result was empty or not an array.');
+      }
+    } catch(parseErr) {
+      console.error('Parse error details:', parseErr.message);
+      console.error('Full raw response:', raw);
+      // Show diagnostic to user
+      showError(
+        '⚠ AI response parsing failed — here is the diagnostic:',
+        parseErr.message + '\n\nShowing sample jobs instead. Screenshot this message and share with support if issue persists.'
+      );
+      parsed = getFallback(today);
+    }
+
+    jobs.ai = parsed.filter(j=>j.category==='ai');
+    jobs.bdr = parsed.filter(j=>j.category==='bdr');
+
+    pdot(5,'done');
+    await sleep(200);
+    document.getElementById('progBox').style.display = 'none';
+    updateStats();
+    renderJobs();
+    document.getElementById('exportBar').style.display = 'flex';
+    showToast('Done! ' + parsed.length + ' jobs found and scored.');
+
+  } catch(err) {
+    document.getElementById('progBox').style.display = 'none';
+    let friendlyMsg = err.message || 'Unknown error';
+    let title = 'Something went wrong';
+    if(friendlyMsg.includes('API key') || friendlyMsg.includes('401') || friendlyMsg.includes('403')) {
+      title = 'API Key Error';
+      friendlyMsg = 'Your API key was rejected. Double-check you copied it correctly and that it is active.';
+    } else if(friendlyMsg.includes('quota') || friendlyMsg.includes('limit') || friendlyMsg.includes('429')) {
+      title = 'Rate limit reached';
+      friendlyMsg = 'You have hit the free usage limit. Wait a few minutes and try again, or switch to a different provider.';
+    } else if(friendlyMsg.includes('credits') || friendlyMsg.includes('billing')) {
+      title = 'Insufficient credits';
+      friendlyMsg = 'This provider requires payment. Switch to Google Gemini or Groq — both are free with no credit card needed.';
+    }
+    showError(title, friendlyMsg);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run Agent Again';
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderJobs();
+}
+
+function updateStats() {
+  const all = [...jobs.ai,...jobs.bdr];
+  document.getElementById('s1').textContent = all.length;
+  document.getElementById('s2').textContent = all.filter(j=>j.score>=80).length;
+  document.getElementById('s3').textContent = all.filter(j=>j.score>=60&&j.score<80).length;
+  document.getElementById('s4').textContent = all.filter(j=>j.outreach?.email).length;
+}
+
+function renderJobs() {
+  const list = document.getElementById('jobsList');
+  const ft = (document.getElementById('filterText')||{}).value?.toLowerCase()||'';
+  const fs = (document.getElementById('filterScore')||{}).value||'all';
+  const fst = (document.getElementById('filterStatus')||{}).value||'all';
+  let data = jobs[currentTab].filter(j=>{
+    return (j.title+j.company).toLowerCase().includes(ft) &&
+      (fs==='all'||(fs==='high'&&j.score>=80)||(fs==='med'&&j.score>=60&&j.score<80)) &&
+      (fst==='all'||j.status===fst);
+  });
+  if(!data.length) {
+    list.innerHTML = `<div class="empty"><h3>${jobs[currentTab].length?'No jobs match your filters':'Your pipeline is empty'}</h3><p>${jobs[currentTab].length?'Try adjusting filters above.':'Click Run Agent Now to start.'}</p></div>`;
+    return;
+  }
+  list.innerHTML = data.map(j=>card(j)).join('');
+}
+
+function card(j) {
+  const isExp = expandedId===j.id;
+  const ot = activeOut[j.id]||'email';
+  const sc = j.score>=80?'#1D9E75':j.score>=60?'#EF9F27':'#E24B4A';
+  const r=19,circ=2*Math.PI*r,dash=(j.score/100)*circ;
+  const lvl = j.score>=80?'<span class="badge badge-high">High match</span>':'<span class="badge badge-med">Medium match</span>';
+  const cat = j.category==='ai'?'<span class="badge badge-ai">AI &amp; Transformation</span>':'<span class="badge badge-bdr">BDR / SDR</span>';
+  const st = `<span class="badge badge-${j.status.toLowerCase()}">${j.status}</span>`;
+  const contacts = j.contacts?.length
+    ? j.contacts.map(c=>`<div class="ccard"><strong>${c.name}</strong><span>${c.role}</span>${c.linkedin?`<a href="${c.linkedin}" target="_blank">LinkedIn ↗</a>`:''}${c.email?`<a href="mailto:${c.email}">${c.email}</a>`:''}</div>`).join('')
+    : '<span style="font-size:13px;color:#aaa">No contact data found.</span>';
+  const onavs = [['email','Email'],['linkedin','LinkedIn'],['followup1','Follow-up 1'],['followup2','Follow-up 2']]
+    .map(([k,l])=>`<div class="onav ${ot===k?'active':''}" onclick="switchOut('${j.id}','${k}')">${l}</div>`).join('');
+  const ocontent = j.outreach?.[ot]||'Not available.';
+
+  return `<div class="job-card ${isExp?'expanded':''}" id="card-${j.id}">
+  <div class="job-head" onclick="toggleCard('${j.id}')">
+    <div class="job-info">
+      <div class="job-title">${j.title}</div>
+      <div class="job-co">${j.company}${j.companySize?' · '+j.companySize:''}</div>
+      <div class="job-badges">${lvl}${cat}${st}<span class="badge badge-gray">${j.date}</span></div>
+    </div>
+    <div class="score-ring">
+      <svg width="48" height="48" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="${r}" fill="none" stroke="#eee" stroke-width="4"/>
+        <circle cx="24" cy="24" r="${r}" fill="none" stroke="${sc}" stroke-width="4"
+          stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"/>
+      </svg>
+      <span class="score-num" style="color:${sc}">${j.score}</span>
+    </div>
+  </div>
+  <div class="job-body">
+    <div class="sec-label">Job summary</div>
+    <div class="sec-text">${j.summary}</div>
+    ${j.link?`<a href="${j.link}" target="_blank" style="font-size:12px;color:#0F3460;display:inline-block;margin-top:5px">View original posting ↗</a>`:''}
+    <div class="sec-label">Why you match</div>
+    <div class="sec-text">${j.matchReason}</div>
+    ${j.whyApply?`<div class="sec-label">Why apply</div><div class="sec-text">${j.whyApply}</div>`:''}
+    <div class="sec-label">Decision makers</div>
+    <div class="contacts-grid">${contacts}</div>
+    <div class="sec-label">Outreach — copy and send manually</div>
+    <div class="onav-row">${onavs}</div>
+    <div class="outreach-box" id="oc-${j.id}">${ocontent}</div>
+    <div class="action-row">
+      <select class="status-sel" onchange="setStatus('${j.id}',this.value)">
+        <option ${j.status==='New'?'selected':''}>New</option>
+        <option ${j.status==='Reviewed'?'selected':''}>Reviewed</option>
+        <option ${j.status==='Applied'?'selected':''}>Applied</option>
+      </select>
+      <button class="abtn" onclick="copyOut('${j.id}')">Copy outreach</button>
+      <button class="abtn success" onclick="markApplied('${j.id}')">Mark as applied</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function toggleCard(id){expandedId=expandedId===id?null:id;renderJobs();}
+function switchOut(jid,tab){
+  activeOut[jid]=tab;
+  const j=[...jobs.ai,...jobs.bdr].find(x=>x.id===jid);
+  const b=document.getElementById('oc-'+jid);
+  if(b&&j) b.textContent=j.outreach?.[tab]||'Not available.';
+  const card=document.getElementById('card-'+jid);
+  if(card){
+    const tabs=['email','linkedin','followup1','followup2'];
+    card.querySelectorAll('.onav').forEach((el,i)=>el.classList.toggle('active',tabs[i]===tab));
+  }
+}
+function setStatus(id,val){const j=[...jobs.ai,...jobs.bdr].find(x=>x.id===id);if(j){j.status=val;updateStats();}}
+function markApplied(id){setStatus(id,'Applied');renderJobs();showToast('Marked as Applied!');}
+function copyOut(id){
+  const b=document.getElementById('oc-'+id);
+  if(b) navigator.clipboard.writeText(b.textContent)
+    .then(()=>showToast('Copied to clipboard!'))
+    .catch(()=>showToast('Select the text and copy manually (Ctrl+C).'));
+}
+function exportCSV(){
+  const all=[...jobs.ai,...jobs.bdr];
+  if(!all.length){alert('Run the agent first to generate jobs.');return;}
+  const h=['Date','Score','Match','Category','Title','Company','Size','Link','Summary','Match Reason','Why Apply',
+    'Contact 1 Name','Contact 1 Role','Contact 1 Email','Contact 1 LinkedIn',
+    'Contact 2 Name','Contact 2 Role','Contact 2 Email','Contact 2 LinkedIn',
+    'Email Draft','LinkedIn Message','Follow-up 1','Follow-up 2','Status'];
+  const e=s=>'"'+(s||'').replace(/"/g,'""')+'"';
+  const rows=all.map(j=>[
+    j.date,j.score,j.score>=80?'HIGH':'MEDIUM',j.category.toUpperCase(),
+    j.title,j.company,j.companySize||'',j.link||'',j.summary,j.matchReason,j.whyApply||'',
+    j.contacts?.[0]?.name||'',j.contacts?.[0]?.role||'',j.contacts?.[0]?.email||'',j.contacts?.[0]?.linkedin||'',
+    j.contacts?.[1]?.name||'',j.contacts?.[1]?.role||'',j.contacts?.[1]?.email||'',j.contacts?.[1]?.linkedin||'',
+    j.outreach?.email||'',j.outreach?.linkedin||'',j.outreach?.followup1||'',j.outreach?.followup2||'',j.status
+  ].map(e).join(','));
+  const csv=[h.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='Job_Pipeline_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded! Open Google Sheets → File → Import to load it.');
+}
+function sheetsGuide(){
+  alert('HOW TO IMPORT INTO GOOGLE SHEETS\n\n1. Click "Export CSV" — file downloads to your computer\n2. Go to sheets.google.com\n3. Create a new blank spreadsheet\n4. Click: File → Import\n5. Click "Upload" tab → select the downloaded CSV file\n6. Set "Separator type" to Comma\n7. Click "Import data"\n\nDone! All jobs, scores, contacts and outreach appear in your sheet.\n\nTip: Rename each sheet tab with the date so you build a daily record over time.');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',3500);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function getFallback(today){return[
+  {id:'f1',category:'ai',title:'AI Revenue Operations Manager',company:'Growdesk',companySize:'51-200',link:'https://growdesk.io/careers',date:today,score:88,status:'New',summary:'Growdesk builds AI-assisted revenue tooling for B2B SaaS teams. This remote role owns CRM automation design, outbound workflow orchestration, and pipeline analytics. Engineering background not required.',matchReason:"Mohamed's Axieonex experience building AI-orchestrated outbound engines is a direct match. HubSpot and GoHighLevel CRM expertise align precisely with the role requirements.",whyApply:'Strong product-market fit with Axieonex positioning — could become a reference case.',contacts:[{name:'Sarah Chen',role:'Head of Sales',linkedin:'https://linkedin.com/in/sarahchen',email:'sarah@growdesk.io'},{name:'Marcus Webb',role:'CEO',linkedin:'https://linkedin.com/in/marcuswebb',email:''}],outreach:{email:"Subject: AI RevOps Manager — Mohamed Elkhalifa\n\nHi Sarah,\n\nI run Axieonex, where I design AI-orchestrated outbound systems replacing fragmented SDR work with managed revenue engines — which maps directly to what Growdesk is building.\n\nAt Amazon Business I achieved 16%+ conversion targeting senior decision-makers at €25M+ European companies, and I've since built that into systemised infrastructure using HubSpot, GoHighLevel, and Apollo.io.\n\nHappy to share a brief case study if useful.\n\nBest,\nMohamed",linkedin:'Hi Sarah — I build AI revenue systems at Axieonex. 16%+ conversion, HubSpot/GHL/Apollo stack. Your RevOps Manager role is a direct match. Worth a call?',followup1:"Subject: Following up — AI RevOps Manager\n\nHi Sarah,\n\nJust circling back. Happy to walk through how I structure outbound systems at Axieonex in 15 minutes if that helps your search.\n\nBest,\nMohamed",followup2:"Subject: Last note — AI RevOps\n\nHi Sarah,\n\nStill very interested in the role. If timing doesn't work, no worries at all — would still value staying connected.\n\nBest,\nMohamed"}},
+  {id:'f2',category:'bdr',title:'Senior BDR — DACH Market',company:'Leapify',companySize:'51-200',link:'https://leapify.io/careers',date:today,score:92,status:'New',summary:'US-based SaaS expanding into DACH. Needs a German-fluent Senior BDR to prospect enterprise leads, run outreach, and hand off to AEs. Salesforce required.',matchReason:'German C1 fluency with 6 years in Germany plus 16%+ LinkedIn conversion targeting DACH decision-makers makes Mohamed exceptionally rare for this exact role.',whyApply:'Direct use of your strongest differentiator — German fluency almost no competitor has.',contacts:[{name:'Anna Becker',role:'VP Sales',linkedin:'https://linkedin.com/in/annabecker',email:'anna@leapify.io'},{name:'James Park',role:'HR Manager',linkedin:'https://linkedin.com/in/jamespark',email:'james@leapify.io'}],outreach:{email:"Subject: Senior DACH BDR — German-fluent, 16%+ Conversion\n\nHi Anna,\n\nI'm a German-fluent B2B sales professional with six years of living and working in Germany and a 16%+ conversion rate targeting DACH decision-makers — including a role at Amazon Business prospecting €25M+ companies in German and English.\n\nI currently run Axieonex designing outbound systems for SaaS clients and I'm ready to bring that execution into a dedicated DACH expansion role.\n\nWould a brief call make sense?\n\nBest,\nMohamed",linkedin:'Hi Anna — German-fluent BDR, 16%+ DACH conversion, 6 years in Germany. Your DACH expansion role is a direct match. Worth 15 minutes?',followup1:"Subject: DACH BDR follow-up\n\nHi Anna,\n\nFollowing up — happy to share a sample German outreach sequence I've used successfully if that helps illustrate my approach.\n\nBest,\nMohamed",followup2:"Subject: Final note — DACH BDR\n\nHi Anna,\n\nLast touch from my side. If timing doesn't work I completely understand — would still value connecting.\n\nBest,\nMohamed"}}
+];}
+
+selectProvider('gemini');
+</script>
+</body>
+</html>
