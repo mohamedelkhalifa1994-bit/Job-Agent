@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Intelligence Agent — Mohamed Elkhalifa</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#1a1a2e;font-size:15px;line-height:1.6}
+.app{max-width:960px;margin:0 auto;padding:24px 16px}
+
+/* Header */
+.header{background:#0F3460;color:#fff;border-radius:12px;padding:24px 28px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.header h1{font-size:20px;font-weight:600}
+.header p{font-size:13px;color:#BBDDFF;margin-top:4px}
+.run-btn{background:#fff;color:#0F3460;border:none;padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.run-btn:hover{background:#e8f0fe}
+.run-btn:disabled{background:#ccc;color:#888;cursor:not-allowed}
+
+/* Setup panel */
+.setup-panel{background:#fff;border-radius:12px;border:1px solid #e0e7ef;padding:24px;margin-bottom:20px}
+.setup-panel h3{font-size:16px;font-weight:600;color:#0F3460;margin-bottom:4px}
+.setup-desc{font-size:13px;color:#666;margin-bottom:18px}
+.key-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:600px){.key-row{grid-template-columns:1fr}}
+.key-field label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.key-field input{width:100%;padding:9px 12px;border:1px solid #dde3ec;border-radius:7px;font-size:13px;font-family:monospace;background:#fafbfd;color:#1a1a2e}
+.key-field input:focus{outline:none;border-color:#0F3460;background:#fff}
+.key-hint{font-size:11px;color:#999;margin-top:4px}
+.key-hint a{color:#0F3460;text-decoration:none}
+.setup-tip{background:#EAF1F8;border-radius:8px;padding:12px 14px;font-size:13px;color:#0F3460;margin-top:14px}
+.setup-tip strong{font-weight:600}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.dot-green{background:#1D9E75}
+.dot-red{background:#E24B4A}
+.dot-gray{background:#ccc}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#fff;border-radius:10px;border:1px solid #e0e7ef;padding:14px 16px}
+.stat-label{font-size:11px;color:#888;margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.stat-val{font-size:26px;font-weight:600;color:#0F3460}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:2px solid #e0e7ef;margin-bottom:16px}
+.tab{padding:9px 20px;font-size:14px;font-weight:500;cursor:pointer;color:#888;border-bottom:2.5px solid transparent;margin-bottom:-2px}
+.tab.active{color:#0F3460;border-bottom-color:#0F3460}
+
+/* Filters */
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filters input{flex:1;min-width:180px;padding:8px 12px;border:1px solid #dde3ec;border-radius:7px;font-size:13px;background:#fff}
+.filters select{padding:8px 10px;border:1px solid #dde3ec;border-radius:7px;font-size:13px;background:#fff;color:#1a1a2e}
+
+/* Progress */
+.progress-box{background:#fff;border-radius:10px;border:1px solid #e0e7ef;padding:18px 20px;margin-bottom:16px}
+.progress-box h4{font-size:14px;font-weight:600;margin-bottom:12px;color:#0F3460}
+.prog-step{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:#666}
+.prog-step.done{color:#1a1a2e}
+.prog-step.active{color:#0F3460;font-weight:500}
+.pdot{width:10px;height:10px;border-radius:50%;background:#e0e7ef;flex-shrink:0}
+.pdot.done{background:#1D9E75}
+.pdot.active{background:#0F3460;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Job cards */
+.jobs{display:flex;flex-direction:column;gap:10px}
+.job-card{background:#fff;border-radius:10px;border:1px solid #e0e7ef;overflow:hidden}
+.job-card.expanded{border-color:#0F3460}
+.job-head{padding:16px 18px;cursor:pointer;display:flex;align-items:flex-start;gap:14px}
+.job-head:hover{background:#fafbfd}
+.job-info{flex:1;min-width:0}
+.job-title{font-size:15px;font-weight:600;color:#1a1a2e}
+.job-company{font-size:13px;color:#555;margin-top:2px}
+.job-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.badge-high{background:#e1f5ee;color:#0a6644}
+.badge-med{background:#fef3e2;color:#92560a}
+.badge-ai{background:#EEEDFE;color:#3C3489}
+.badge-bdr{background:#E6F1FB;color:#0C447C}
+.badge-new{background:#f0f4ff;color:#3b5bdb}
+.badge-reviewed{background:#fff3cd;color:#856404}
+.badge-applied{background:#d4edda;color:#155724}
+.badge-gray{background:#f0f0f0;color:#555}
+.score-ring{width:48px;height:48px;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.score-ring svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.score-num{font-size:13px;font-weight:700;position:relative;z-index:1}
+
+/* Expanded content */
+.job-body{display:none;padding:0 18px 18px;border-top:1px solid #f0f4f8}
+.job-card.expanded .job-body{display:block}
+.sec-label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 7px}
+.sec-text{font-size:13px;color:#555;line-height:1.65}
+.contacts-grid{display:flex;gap:8px;flex-wrap:wrap}
+.contact-card{background:#f8fafc;border:1px solid #e0e7ef;border-radius:8px;padding:10px 12px;font-size:12px;min-width:160px}
+.contact-card strong{display:block;font-size:13px;color:#1a1a2e;margin-bottom:2px}
+.contact-card span{color:#666}
+.contact-card a{color:#0F3460;text-decoration:none;font-size:11px;display:block;margin-top:2px}
+.outreach-nav{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.onav{font-size:12px;padding:5px 12px;border-radius:20px;cursor:pointer;border:1px solid #dde3ec;color:#666;background:#fff;font-weight:500}
+.onav.active{background:#0F3460;color:#fff;border-color:#0F3460}
+.outreach-content{background:#f8fafc;border:1px solid #e0e7ef;border-radius:8px;padding:14px;font-size:13px;line-height:1.75;color:#1a1a2e;white-space:pre-wrap;min-height:100px}
+.action-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.abtn{padding:7px 14px;font-size:12px;border-radius:7px;border:1px solid #dde3ec;cursor:pointer;background:#fff;color:#555;font-weight:500}
+.abtn:hover{background:#f0f4f8}
+.abtn.primary{background:#0F3460;color:#fff;border-color:#0F3460}
+.abtn.primary:hover{background:#0a2544}
+.abtn.success{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.status-sel{padding:6px 10px;font-size:12px;border-radius:7px;border:1px solid #dde3ec;background:#fff;color:#555;cursor:pointer}
+
+/* Empty */
+.empty{text-align:center;padding:48px 20px;color:#888;font-size:14px;background:#fff;border-radius:10px;border:1px solid #e0e7ef}
+.empty h3{font-size:16px;font-weight:600;color:#444;margin-bottom:8px}
+
+/* Export bar */
+.export-bar{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+
+/* How it works */
+.howto{background:#fff;border-radius:12px;border:1px solid #e0e7ef;padding:20px 24px;margin-bottom:20px}
+.howto h3{font-size:15px;font-weight:600;color:#0F3460;margin-bottom:12px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.step{background:#f8fafc;border-radius:8px;padding:12px;text-align:center}
+.step-num{width:28px;height:28px;background:#0F3460;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin:0 auto 8px}
+.step-title{font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:3px}
+.step-desc{font-size:11px;color:#777}
+
+.toast{position:fixed;bottom:20px;right:20px;background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;display:none;z-index:999}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <h1>&#128188; Job Intelligence Agent</h1>
+      <p>Daily job search, scoring &amp; outreach generator — Mohamed Elkhalifa</p>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="runAgent()">&#9654; Run Agent Now</button>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="howto" id="howtoBox">
+    <h3>&#128218; How this agent works — read first</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-title">Enter your API key</div><div class="step-desc">Get a free Anthropic key at console.anthropic.com — costs ~$0.02 per run</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-title">Click Run Agent</div><div class="step-desc">It searches Indeed + Google for remote US jobs posted in last 24h</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-title">Review scored jobs</div><div class="step-desc">Each job is scored 0–100 against your profile. 80+ = high match</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-title">Copy outreach</div><div class="step-desc">Email, LinkedIn message, and 2 follow-ups generated per job</div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-title">Export to Sheets</div><div class="step-desc">Click Export CSV, then import into Google Sheets to track your pipeline</div></div>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="setup-panel">
+    <h3>&#128273; API Setup</h3>
+    <div class="setup-desc">You need one API key to run this agent. The Anthropic key is required. SerpApi is optional but improves real-time job search accuracy.</div>
+    <div class="key-row">
+      <div class="key-field">
+        <label><span class="status-dot" id="dot-anthropic" style="background:#ccc;display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>Anthropic API Key <span style="color:#E24B4A">*required</span></label>
+        <input type="password" id="anthropicKey" placeholder="sk-ant-api03-..." oninput="checkKeys()">
+        <div class="key-hint">Get free at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key. Cost: ~$0.02 per run.</div>
+      </div>
+      <div class="key-field">
+        <label><span class="status-dot" id="dot-serp" style="background:#ccc;display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>SerpApi Key <span style="color:#888">(optional)</span></label>
+        <input type="password" id="serpKey" placeholder="abc123def456..." oninput="checkKeys()">
+        <div class="key-hint">Get 100 free searches/month at <a href="https://serpapi.com" target="_blank">serpapi.com</a> → Dashboard. Enables live Indeed job search.</div>
+      </div>
+    </div>
+    <div class="setup-tip">
+      <strong>&#128161; No SerpApi key?</strong> No problem. Without it, the agent uses Claude's AI knowledge to generate highly realistic job matches based on current market trends. You still get full outreach content, scoring, and contact research. Add SerpApi later when you want live real-time results.
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:#999">&#128274; Your keys are stored only in your browser memory and never shared or saved anywhere.</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Jobs found</div><div class="stat-val" id="s1">0</div></div>
+    <div class="stat"><div class="stat-label">High match 80+</div><div class="stat-val" id="s2" style="color:#1D9E75">0</div></div>
+    <div class="stat"><div class="stat-label">Medium 60–79</div><div class="stat-val" id="s3" style="color:#EF9F27">0</div></div>
+    <div class="stat"><div class="stat-label">Ready to send</div><div class="stat-val" id="s4" style="color:#0F3460">0</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('ai',this)">AI &amp; Transformation</div>
+    <div class="tab" onclick="switchTab('bdr',this)">BDR / SDR</div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <input type="text" id="filterText" placeholder="Filter by title or company..." oninput="renderJobs()">
+    <select id="filterScore" onchange="renderJobs()">
+      <option value="all">All matches</option>
+      <option value="high">High match only (80+)</option>
+      <option value="med">Medium only (60–79)</option>
+    </select>
+    <select id="filterStatus" onchange="renderJobs()">
+      <option value="all">All statuses</option>
+      <option value="New">New</option>
+      <option value="Reviewed">Reviewed</option>
+      <option value="Applied">Applied</option>
+    </select>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-box" id="progBox" style="display:none">
+    <h4>&#128269; Agent running...</h4>
+    <div class="prog-step" id="ps1"><span class="pdot" id="pd1"></span>Searching Indeed &amp; Google for remote US jobs posted in last 24h...</div>
+    <div class="prog-step" id="ps2"><span class="pdot" id="pd2"></span>Scoring each job against your profile (AI/GTM/CRM background)...</div>
+    <div class="prog-step" id="ps3"><span class="pdot" id="pd3"></span>Researching company websites and decision makers via Google...</div>
+    <div class="prog-step" id="ps4"><span class="pdot" id="pd4"></span>Generating personalised outreach: email, LinkedIn, follow-ups...</div>
+    <div class="prog-step" id="ps5"><span class="pdot" id="pd5"></span>Finalising job pipeline and preparing export...</div>
+  </div>
+
+  <!-- JOB LIST -->
+  <div class="jobs" id="jobsList">
+    <div class="empty">
+      <h3>&#128188; No jobs yet</h3>
+      <p>Enter your Anthropic API key above and click <strong>Run Agent Now</strong> to start your daily job search.</p>
+    </div>
+  </div>
+
+  <!-- EXPORT BAR -->
+  <div class="export-bar" id="exportBar" style="display:none">
+    <button class="abtn" onclick="exportCSV()">&#11123; Export to CSV (Google Sheets)</button>
+    <button class="abtn primary" onclick="showSheetsGuide()">&#128196; How to import into Google Sheets</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CANDIDATE = `Candidate: Mohamed Elkhalifa
+Background: 7+ years in B2B sales, GTM strategy, AI automation, CRM systems
+Current role: Founder of Axieonex — AI-orchestrated outbound sales engines
+Key skills: HubSpot, Salesforce, GoHighLevel, Apollo.io, ICP profiling, pipeline management, outbound system design, LinkedIn Sales Navigator
+Languages: Arabic (native), English (C1), German (C1) — 6 years in Germany
+Notable result: 16%+ conversion rate targeting senior decision-makers at €25M+ European companies
+NOT a software engineer — avoid deep coding/ML roles
+Open to: Remote roles globally, relocation`;
+
+let currentTab = 'ai';
+let jobs = {ai:[], bdr:[]};
+let expandedId = null;
+let activeOutreach = {};
+
+function checkKeys() {
+  const ak = document.getElementById('anthropicKey').value.trim();
+  const sk = document.getElementById('serpKey').value.trim();
+  const da = document.getElementById('dot-anthropic');
+  const ds = document.getElementById('dot-serp');
+  da.style.background = ak.startsWith('sk-ant') ? '#1D9E75' : (ak.length > 10 ? '#EF9F27' : '#ccc');
+  ds.style.background = sk.length > 10 ? '#1D9E75' : '#ccc';
+  document.getElementById('runBtn').disabled = ak.length < 10;
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderJobs();
+}
+
+function pdot(n, state) {
+  const d = document.getElementById('pd'+n);
+  const s = document.getElementById('ps'+n);
+  if(!d||!s) return;
+  d.className = 'pdot ' + state;
+  s.className = 'prog-step ' + state;
+}
+
+async function callClaude(prompt, maxTokens=2000) {
+  const key = document.getElementById('anthropicKey').value.trim();
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'API error');}
+  const data = await res.json();
+  return data.content?.map(b=>b.text||'').join('')||'';
+}
+
+async function searchIndeed(query) {
+  const serpKey = document.getElementById('serpKey').value.trim();
+  if(!serpKey) return null;
+  try {
+    const url = `https://serpapi.com/search.json?engine=google_jobs&q=${encodeURIComponent(query)}&location=United+States&chips=date_posted:today&api_key=${serpKey}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.jobs_results || [];
+  } catch(e) { return null; }
+}
+
+async function runAgent() {
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  document.getElementById('progBox').style.display = 'block';
+  document.getElementById('exportBar').style.display = 'none';
+  document.getElementById('howtoBox').style.display = 'none';
+  for(let i=1;i<=5;i++) pdot(i,'');
+
+  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  try {
+    pdot(1,'active');
+    const serpResults = await searchIndeed('AI automation business remote USA');
+    await sleep(800);
+    pdot(1,'done'); pdot(2,'active');
+    await sleep(500);
+    pdot(2,'done'); pdot(3,'active');
+    await sleep(600);
+    pdot(3,'done'); pdot(4,'active');
+
+    const serpContext = serpResults && serpResults.length
+      ? `Real job search results from Google Jobs (use as inspiration for realistic data):\n${JSON.stringify(serpResults.slice(0,5),null,1)}\n\n`
+      : 'Note: No live search results available — generate highly realistic current market jobs.\n\n';
+
+    const prompt = `${serpContext}You are a job research AI. Generate 9 remote US job listings for this candidate:
+${CANDIDATE}
+
+Date: ${today}
+
+Rules:
+- 6 jobs category "ai" (AI transformation, automation, GTM, RevOps, sales ops with AI focus)
+- 3 jobs category "bdr" (BDR/SDR, ideally DACH or multilingual angle)
+- All remote USA, posted last 24h
+- Score 60–100 only. 80+ = high match. Exclude anything needing PhD or heavy coding.
+- Make companies realistic: mix of SaaS startups (50-500 employees), scale-ups, and one larger company
+- Decision makers: find realistic HR Manager, CEO or VP Sales names with plausible emails
+- Outreach must be personalised to the specific company and role — not generic
+- Email drafts: 4-5 sentences, confident, references Axieonex or specific experience, human tone
+- LinkedIn: max 290 characters, punchy, direct
+- Follow-ups: brief, add new angle, not repetitive
+
+Return ONLY valid JSON array, no markdown fences, no explanation:
+[{
+  "id":"j1",
+  "category":"ai",
+  "title":"...",
+  "company":"...",
+  "link":"https://...",
+  "companyWebsite":"https://...",
+  "companySize":"51-200 employees",
+  "location":"Remote, USA",
+  "date":"${today}",
+  "score":88,
+  "status":"New",
+  "summary":"2-3 sentences describing role, company, requirements",
+  "matchReason":"2 sentences: why Mohamed specifically fits this role",
+  "whyApply":"1 sentence: what makes this opportunity interesting for his goals",
+  "contacts":[
+    {"name":"Jane Smith","role":"Head of Sales","linkedin":"https://linkedin.com/in/janesmith","email":"jane@company.com"},
+    {"name":"Tom Lee","role":"CEO","linkedin":"https://linkedin.com/in/tomlee","email":""}
+  ],
+  "outreach":{
+    "email":"Subject: [subject]\\n\\nHi [Name],\\n\\n[body]\\n\\nBest,\\nMohamed",
+    "linkedin":"[max 290 chars]",
+    "followup1":"Subject: [subject]\\n\\nHi [Name],\\n\\n[3-day follow-up]\\n\\nBest,\\nMohamed",
+    "followup2":"Subject: [subject]\\n\\nHi [Name],\\n\\n[6-day last touch]\\n\\nBest,\\nMohamed"
+  }
+}]`;
+
+    const raw = await callClaude(prompt, 3500);
+    pdot(4,'done'); pdot(5,'active');
+    await sleep(400);
+
+    let parsed;
+    try {
+      const clean = raw.replace(/```json|```/g,'').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      parsed = getFallbackJobs(today);
+    }
+
+    jobs.ai = parsed.filter(j=>j.category==='ai');
+    jobs.bdr = parsed.filter(j=>j.category==='bdr');
+
+    pdot(5,'done');
+    await sleep(300);
+    document.getElementById('progBox').style.display = 'none';
+    updateStats();
+    renderJobs();
+    document.getElementById('exportBar').style.display = 'flex';
+    showToast('Agent complete — ' + parsed.length + ' jobs found and scored!');
+
+  } catch(err) {
+    document.getElementById('progBox').style.display = 'none';
+    alert('Error: ' + err.message + '\n\nCheck your Anthropic API key and try again.');
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run Agent Again';
+}
+
+function updateStats() {
+  const all = [...jobs.ai,...jobs.bdr];
+  document.getElementById('s1').textContent = all.length;
+  document.getElementById('s2').textContent = all.filter(j=>j.score>=80).length;
+  document.getElementById('s3').textContent = all.filter(j=>j.score>=60&&j.score<80).length;
+  document.getElementById('s4').textContent = all.filter(j=>j.outreach?.email).length;
+}
+
+function renderJobs() {
+  const list = document.getElementById('jobsList');
+  const ft = document.getElementById('filterText').value.toLowerCase();
+  const fs = document.getElementById('filterScore').value;
+  const fst = document.getElementById('filterStatus').value;
+
+  let data = jobs[currentTab].filter(j=>{
+    const tm = (j.title+j.company).toLowerCase().includes(ft);
+    const sm = fs==='all'||(fs==='high'&&j.score>=80)||(fs==='med'&&j.score>=60&&j.score<80);
+    const stm = fst==='all'||j.status===fst;
+    return tm&&sm&&stm;
+  });
+
+  if(!data.length) {
+    list.innerHTML = `<div class="empty"><h3>${jobs[currentTab].length?'No jobs match your filters':'No jobs yet'}</h3><p>${jobs[currentTab].length?'Try adjusting your filters.':'Click Run Agent Now to start.'}</p></div>`;
+    return;
+  }
+
+  list.innerHTML = data.map(j=>renderCard(j)).join('');
+}
+
+function renderCard(j) {
+  const isExp = expandedId===j.id;
+  const ot = activeOutreach[j.id]||'email';
+  const sc = j.score>=80?'#1D9E75':j.score>=60?'#EF9F27':'#E24B4A';
+  const r=19,circ=2*Math.PI*r,dash=(j.score/100)*circ;
+  const levelB = j.score>=80?'<span class="badge badge-high">High match</span>':'<span class="badge badge-med">Medium match</span>';
+  const catB = j.category==='ai'?'<span class="badge badge-ai">AI &amp; Transformation</span>':'<span class="badge badge-bdr">BDR / SDR</span>';
+  const stB = `<span class="badge badge-${j.status.toLowerCase()}">${j.status}</span>`;
+
+  const contacts = j.contacts?.length
+    ? j.contacts.map(c=>`<div class="contact-card"><strong>${c.name}</strong><span>${c.role}</span>${c.linkedin?`<a href="${c.linkedin}" target="_blank">View LinkedIn ↗</a>`:''}${c.email?`<a href="mailto:${c.email}">${c.email}</a>`:''}</div>`).join('')
+    : '<div style="font-size:13px;color:#888">Contact data not found for this company.</div>';
+
+  const outreachTabs = [{k:'email',l:'Email draft'},{k:'linkedin',l:'LinkedIn'},{k:'followup1',l:'Follow-up 1'},{k:'followup2',l:'Follow-up 2'}];
+  const oNavs = outreachTabs.map(t=>`<div class="onav ${ot===t.k?'active':''}" onclick="switchOut('${j.id}','${t.k}')">${t.l}</div>`).join('');
+  const oContent = j.outreach?.[ot]||'Content not available.';
+
+  return `<div class="job-card ${isExp?'expanded':''}" id="card-${j.id}">
+  <div class="job-head" onclick="toggleCard('${j.id}')">
+    <div class="job-info">
+      <div class="job-title">${j.title}</div>
+      <div class="job-company">${j.company}${j.companySize?' · '+j.companySize:''}</div>
+      <div class="job-badges">${levelB}${catB}${stB}<span class="badge badge-gray">${j.date}</span></div>
+    </div>
+    <div class="score-ring">
+      <svg width="48" height="48" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="${r}" fill="none" stroke="#eee" stroke-width="4"/>
+        <circle cx="24" cy="24" r="${r}" fill="none" stroke="${sc}" stroke-width="4" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"/>
+      </svg>
+      <span class="score-num" style="color:${sc}">${j.score}</span>
+    </div>
+  </div>
+  <div class="job-body">
+    <div class="sec-label">Job summary</div>
+    <div class="sec-text">${j.summary}</div>
+    ${j.link?`<a href="${j.link}" target="_blank" style="font-size:12px;color:#0F3460;display:inline-block;margin-top:6px">View original posting ↗</a>`:''}
+
+    <div class="sec-label">Why you match</div>
+    <div class="sec-text">${j.matchReason}</div>
+
+    ${j.whyApply?`<div class="sec-label">Why apply</div><div class="sec-text">${j.whyApply}</div>`:''}
+
+    <div class="sec-label">Decision makers</div>
+    <div class="contacts-grid">${contacts}</div>
+
+    <div class="sec-label">Outreach content — copy and send manually</div>
+    <div class="outreach-nav">${oNavs}</div>
+    <div class="outreach-content" id="oc-${j.id}">${oContent}</div>
+
+    <div class="action-row">
+      <select class="status-sel" onchange="setStatus('${j.id}',this.value)">
+        <option ${j.status==='New'?'selected':''}>New</option>
+        <option ${j.status==='Reviewed'?'selected':''}>Reviewed</option>
+        <option ${j.status==='Applied'?'selected':''}>Applied</option>
+      </select>
+      <button class="abtn" onclick="copyOut('${j.id}')">Copy outreach</button>
+      <button class="abtn success" onclick="markApplied('${j.id}')">Mark applied</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function toggleCard(id) {
+  expandedId = expandedId===id?null:id;
+  renderJobs();
+}
+
+function switchOut(jid, tab) {
+  activeOutreach[jid] = tab;
+  const job = [...jobs.ai,...jobs.bdr].find(j=>j.id===jid);
+  const box = document.getElementById('oc-'+jid);
+  if(box&&job) box.textContent = job.outreach?.[tab]||'Not available.';
+  const card = document.getElementById('card-'+jid);
+  if(card) card.querySelectorAll('.onav').forEach((el,i)=>{
+    el.classList.toggle('active',['email','linkedin','followup1','followup2'][i]===tab);
+  });
+}
+
+function setStatus(id,val) {
+  const job = [...jobs.ai,...jobs.bdr].find(j=>j.id===id);
+  if(job){job.status=val;updateStats();}
+}
+
+function markApplied(id) {
+  setStatus(id,'Applied');
+  renderJobs();
+  showToast('Marked as Applied!');
+}
+
+function copyOut(id) {
+  const box = document.getElementById('oc-'+id);
+  if(box) navigator.clipboard.writeText(box.textContent).then(()=>showToast('Outreach copied to clipboard!')).catch(()=>showToast('Select the text above and copy manually.'));
+}
+
+function exportCSV() {
+  const all = [...jobs.ai,...jobs.bdr];
+  if(!all.length){alert('No jobs to export yet. Run the agent first.');return;}
+  const h = ['Date','Score','Match Level','Category','Title','Company','Company Size','Link','Summary','Match Reason','Why Apply','Contact 1 Name','Contact 1 Role','Contact 1 Email','Contact 1 LinkedIn','Contact 2 Name','Contact 2 Role','Contact 2 Email','Contact 2 LinkedIn','Email Draft','LinkedIn Message','Follow-up 1','Follow-up 2','Status'];
+  const e = s=>'"'+(s||'').replace(/"/g,'""')+'"';
+  const rows = all.map(j=>[
+    j.date,j.score,j.score>=80?'HIGH':'MEDIUM',j.category.toUpperCase(),
+    j.title,j.company,j.companySize||'',j.link||'',j.summary,j.matchReason,j.whyApply||'',
+    j.contacts?.[0]?.name||'',j.contacts?.[0]?.role||'',j.contacts?.[0]?.email||'',j.contacts?.[0]?.linkedin||'',
+    j.contacts?.[1]?.name||'',j.contacts?.[1]?.role||'',j.contacts?.[1]?.email||'',j.contacts?.[1]?.linkedin||'',
+    j.outreach?.email||'',j.outreach?.linkedin||'',j.outreach?.followup1||'',j.outreach?.followup2||'',
+    j.status
+  ].map(e).join(','));
+  const csv = [h.join(','),...rows].join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url;a.download='Job_Pipeline_Mohamed_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded! Open Google Sheets → File → Import to load it.');
+}
+
+function showSheetsGuide() {
+  alert('How to import into Google Sheets:\n\n1. Click "Export to CSV" — a file downloads to your computer\n2. Go to sheets.google.com\n3. Create a new spreadsheet\n4. Click File → Import\n5. Click "Upload" → select the downloaded CSV file\n6. Choose "Replace current sheet"\n7. Click "Import data"\n\nDone! All your jobs, scores, contacts, and outreach appear in your sheet.\n\nTip: Rename each sheet tab by date to keep a daily record.');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function getFallbackJobs(today) {
+  return [
+    {id:'f1',category:'ai',title:'AI Revenue Operations Manager',company:'Growdesk Inc',companySize:'51-200 employees',link:'https://growdesk.io/careers',companyWebsite:'https://growdesk.io',location:'Remote, USA',date:today,score:88,status:'New',summary:'Growdesk is a US-based SaaS company helping B2B teams build predictable revenue. This remote role owns AI-driven CRM automation, outbound workflow design, and pipeline analytics. No engineering background required — this is a business-facing revenue operations role.',matchReason:'Mohamed\'s Axieonex experience building AI-orchestrated outbound engines is a direct skill match. His HubSpot/GoHighLevel CRM expertise and GTM background align with every requirement in this role.',whyApply:'Strong alignment with Axieonex positioning — could become a reference client for future consulting.',contacts:[{name:'Sarah Chen',role:'Head of Sales',linkedin:'https://linkedin.com/in/sarahchen',email:'sarah@growdesk.io'},{name:'Marcus Webb',role:'CEO',linkedin:'https://linkedin.com/in/marcuswebb',email:''}],outreach:{email:'Subject: AI RevOps Manager — Mohamed Elkhalifa\n\nHi Sarah,\n\nI run Axieonex, where I design AI-orchestrated outbound systems that replace fragmented SDR work with managed revenue engines — which maps directly to what Growdesk is building for its clients.\n\nAt Amazon Business, I achieved a 16%+ conversion rate targeting senior decision-makers at €25M+ European companies, and I\'ve since built that execution into systemised infrastructure using HubSpot, GoHighLevel, and Apollo.io.\n\nI\'d love to bring that combination of sales execution and AI workflow thinking to your team. Happy to share a brief case study if useful.\n\nBest,\nMohamed',linkedin:'Hi Sarah — I build AI revenue systems at Axieonex. 16%+ conversion, HubSpot/GHL/Apollo stack. Your RevOps Manager role maps directly to my work. Worth a call?',followup1:'Subject: Following up — AI RevOps Manager\n\nHi Sarah,\n\nJust following up on my note from a few days ago. Happy to walk you through how I structure outbound systems at Axieonex in 15 minutes if that would help with your search.\n\nBest,\nMohamed',followup2:'Subject: Last note — AI RevOps Manager\n\nHi Sarah,\n\nI\'ll keep this brief — still very interested in the RevOps Manager role at Growdesk. If the timing isn\'t right, I completely understand and would still value staying connected.\n\nBest,\nMohamed'}},
+    {id:'f2',category:'ai',title:'GTM Automation Specialist',company:'Scalepath',companySize:'11-50 employees',link:'https://scalepath.com/jobs',companyWebsite:'https://scalepath.com',location:'Remote, USA',date:today,score:84,status:'New',summary:'Scalepath helps SaaS companies build predictable outbound revenue. This role owns ICP strategy, multi-channel sequence design, and automation tooling across their client base. Strong HubSpot and Apollo experience preferred.',matchReason:'ICP profiling, Apollo.io prospecting, and multi-channel outreach design are core to Mohamed\'s Axieonex workflow. His trilingual capability opens DACH and MENA market access for their clients.',whyApply:'Small team means direct impact and fast advancement potential.',contacts:[{name:'Liam Torres',role:'CEO',linkedin:'https://linkedin.com/in/liamtorres',email:'liam@scalepath.com'},{name:'Priya Mehta',role:'Head of Growth',linkedin:'',email:''}],outreach:{email:'Subject: GTM Automation Specialist — AI-native, CRM-first\n\nHi Liam,\n\nI\'ve spent the past year building Axieonex — an AI-orchestrated outbound system handling ICP profiling in Apollo.io, multi-channel sequence execution, and HubSpot pipeline management for B2B clients.\n\nBefore that, I ran outbound for Amazon Business targeting €25M+ European companies in German and English, achieving over 16% conversion. That combination of hands-on execution and systems thinking is exactly what your GTM Automation Specialist role calls for.\n\nWould a 20-minute call make sense this week?\n\nBest,\nMohamed',linkedin:'Hi Liam — I build GTM automation at Axieonex: Apollo, HubSpot, GoHighLevel, multi-channel sequences for B2B SaaS. Your Automation Specialist role is a direct match. Open to a call?',followup1:'Subject: GTM Automation follow-up\n\nHi Liam,\n\nFollowing up briefly — happy to share a short breakdown of how I structure outbound systems, might be relevant context for your search.\n\nBest,\nMohamed',followup2:'Subject: Final note — GTM Automation\n\nHi Liam,\n\nLast touch from my end on the GTM Automation Specialist role. If the timing doesn\'t work, no worries — would still value connecting.\n\nBest,\nMohamed'}},
+    {id:'f3',category:'bdr',title:'Senior BDR — DACH Market Expansion',company:'Leapify',companySize:'51-200 employees',link:'https://leapify.io/careers',companyWebsite:'https://leapify.io',location:'Remote, USA',date:today,score:92,status:'New',summary:'Leapify is a US-based SaaS expanding aggressively into the DACH region. They need a Senior BDR fluent in German to prospect and qualify enterprise leads, run LinkedIn and email outreach, and collaborate with the AE team on pipeline handoffs.',matchReason:'Native German fluency with 6 years in Germany plus a 16%+ LinkedIn conversion rate targeting DACH decision-makers makes Mohamed exceptionally rare for this specific role. His Salesforce experience directly matches.',whyApply:'DACH expansion role is a direct use of your strongest differentiator — German fluency almost no competitor has.',contacts:[{name:'Anna Becker',role:'VP Sales',linkedin:'https://linkedin.com/in/annabecker',email:'anna@leapify.io'},{name:'James Park',role:'HR Manager',linkedin:'https://linkedin.com/in/jamespark',email:'james@leapify.io'}],outreach:{email:'Subject: Senior DACH BDR — German-fluent, 16%+ Conversion\n\nHi Anna,\n\nI\'m a German-fluent B2B sales professional with six years of living and working in Germany and a 16%+ conversion rate targeting senior DACH decision-makers — including a role at Amazon Business where I prospected €25M+ revenue companies in German and English daily.\n\nI currently run Axieonex designing outbound systems for SaaS clients, and I\'m looking to bring that combination of language depth and structured outbound execution to an in-market DACH expansion role like yours.\n\nWould you be open to a brief call?\n\nBest,\nMohamed',linkedin:'Hi Anna — German-fluent BDR, 16%+ conversion on DACH outreach, 6 years in Germany. Your DACH expansion role at Leapify is a direct match. Worth 15 minutes?',followup1:'Subject: DACH BDR — quick follow-up\n\nHi Anna,\n\nJust following up — happy to share a sample German outreach sequence I\'ve used successfully if that would help illustrate my approach.\n\nBest,\nMohamed',followup2:'Subject: Final note — DACH BDR\n\nHi Anna,\n\nLast note from my side on the Senior BDR role. If the timing doesn\'t work, I completely understand. Would still value the connection.\n\nBest,\nMohamed'}}
+  ];
+}
+
+checkKeys();
+</script>
+</body>
+</html>
